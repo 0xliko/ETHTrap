@@ -35,4 +35,3 @@ pm2 start index.js
 
 <p><img align="center" src="https://img.shields.io/static/v1?label=&message=Telegram&color=blue" />&nbsp;<strong>@longines0924</strong> </p>
 
-

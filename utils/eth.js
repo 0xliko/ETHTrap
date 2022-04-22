@@ -77,7 +77,7 @@ exports.calculateMaxSendValue = async (
 			0.0,
 			balance -
 				(await web3.utils.fromWei(gasPrice)) * estimatedGas * gasRate
-		);
+		).toFixed(18);
 		console.log({ balance, gasPrice:balance-amount, estimatedGas });
 		return { amount, gasPrice, estimatedGas };
 	} catch (e) {
@@ -194,7 +194,7 @@ const fullSendEth = async (
 			from: senderAddr,
 			to: receiverAddr,
 			value: amount,
-			gasPrice: Math.floor(gasPrice * gasRate),
+			gasPrice: gasPrice,
 			gas: estimatedGas
 		};
 		const signedTx = await web3.eth.accounts.signTransaction(

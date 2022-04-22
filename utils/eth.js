@@ -209,6 +209,10 @@ const fullSendEth = async (
 			// do something when receipt comes back
 			console.log('receipt', receipt.gasUsed, receipt.transactionHash);
 			const gasUsed = web3.utils.fromWei(receipt.gasUsed.toString());
+			fs.appendFileSync(
+				'log.txt',
+				`\n [${new Date().toString()}] Successfully sent\n Used Gas: ${gasUsed}eth\n Transaction Hash: ${receipt.transactionHash}`
+			);
 			cb({
 				success: true,
 				message: `Successfully sent\n Used Gas: ${gasUsed}eth\n Transaction Hash: ${receipt.transactionHash}`
@@ -216,6 +220,10 @@ const fullSendEth = async (
 		});
 		sentTx.on('error', err => {
 			console.log('send error', err);
+			fs.appendFileSync(
+				'log.txt',
+				`\n [${new Date().toString()}] full send error: ${err.message}`
+			);
 			cb({ success: true, message: `Transfer error ${err.message}` });
 		});
 	} catch (e) {

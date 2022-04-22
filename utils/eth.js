@@ -78,7 +78,7 @@ exports.calculateMaxSendValue = async (
 			balance -
 				(await web3.utils.fromWei(gasPrice)) * estimatedGas * gasRate
 		);
-		console.log({ balance, gasPrice, estimatedGas });
+		console.log({ balance, gasPrice:balance-amount, estimatedGas });
 		return { amount, gasPrice, estimatedGas };
 	} catch (e) {
 		throw 1;

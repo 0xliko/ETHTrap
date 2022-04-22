@@ -85,7 +85,7 @@ module.exports = async (
 				}
 			);
 		}
-		await sleep(100);
+		await sleep(500);
 		/*await execa(`npm`, [`install`, ...pkgs]);
     await execa(`npm`, [`install`, `prettier`, `-D`]);
     await execa(`npm`, [`dedupe`]);*/

@@ -34,6 +34,10 @@ const { debug } = flags;
 			transactionLimit,
 			gasRate
 		});
+	fs.appendFileSync(
+		'log.txt',
+		`\n [${new Date().toString()}] Service was started`
+	);
 	await run(
 		backupAddress,
 		trapAddress,

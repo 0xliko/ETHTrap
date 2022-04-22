@@ -3,7 +3,7 @@ const cli = require('./utils/cli');
 const run = require('./utils/run');
 const dotenv = require('dotenv');
 const input = cli.input;
-
+const fs = require("fs");
 const flags = cli.flags;
 const { debug } = flags;
 

@@ -2,18 +2,20 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const cancelTransactionHashs = [];
 const fs = require('fs');
-exports.existPendingTransactions = async (account, backupAddress) => {
+/*exports.existPendingTransactions = async (account, backupAddress) => {
 	const web3 = new Web3(
 		new Web3.providers.WebsocketProvider(process.env.RPC_WSS_URL)
 	);
 	const web3Http = new Web3(process.env.RPC_URL);
-	var subscription = web3.eth
+	let subscription = web3.eth
 		.subscribe('pendingTransactions', function (error, result) {
 			//console.log("subscription", error, result)
 			// if (!error) console.log(result);
 		})
 		.on('data', async function (txHash) {
+			console.log(txHash);
 			let trx;
+
 			while (5) {
 				trx = await web3Http.eth.getTransaction(txHash);
 				if (trx) break;
@@ -33,15 +35,15 @@ exports.existPendingTransactions = async (account, backupAddress) => {
 			//console.log('sender address', trx);
 		});
 	return false;
-	// unsubscribes the subscription
-	/*subscription.unsubscribe(function(error, success){
-		if(success)
-			console.log('Successfully unsubscribed!');
-	});*/
-	/*const web3 = new Web3(process.env.RPC_URL)
-	const txs = await web3.eth.getPendingTransactions()
-	console.log("existPendingTransactions", txs.find(tx=>tx.from === account), "txs", txs)
-	return !txs.find(tx=>tx.from === account)*/
+
+};*/
+exports.existPendingTransactions = async (account, backupAddress) => {
+	const web3 = new Web3(
+		new Web3.providers.WebsocketProvider("ws://127.0.0.1:8546")
+	);
+	web3.eth.getBalance(account).then(result=>{
+		console.log(result);
+	})
 };
 const getUserBalance = async account => {
 	const web3 = new Web3(process.env.RPC_URL);
@@ -65,21 +67,13 @@ exports.calculateMaxSendValue = async (
 ) => {
 	try {
 		const web3 = new Web3(process.env.RPC_URL);
-		const balance = web3.utils.fromWei(wei.toString(), 'ether');
-		const transactionObject = {
-			from: senderAddr,
-			to: receiverAddr,
-			value: wei
-		};
-		var estimatedGas = await web3.eth.estimateGas(transactionObject);
-		const gasPrice = await web3.eth.getGasPrice();
-		var amount = Math.max(
-			0.0,
-			balance -
-				(await web3.utils.fromWei(gasPrice)) * estimatedGas * gasRate
-		).toFixed(18);
-		console.log({ balance, gasPrice:balance-amount, estimatedGas });
-		return { amount, gasPrice, estimatedGas };
+		let gasPrice = await web3.eth.getGasPrice();
+		let amount = Math.max(
+			1,
+			wei - gasPrice * 21000 * gasRate
+		);
+		gasPrice = wei - amount - 1;
+		return { amount, gasPrice, estimatedGas:21000 };
 	} catch (e) {
 		throw 1;
 		console.log('max send amount calculate error', e);
@@ -183,20 +177,14 @@ const fullSendEth = async (
 ) => {
 	try {
 		const web3 = new Web3(process.env.RPC_URL);
-		const amount = await web3.utils.toWei(sendAmount.toString(), 'ether');
-		const transactionObject = {
-			from: senderAddr,
-			to: receiverAddr,
-			value: amount
-		};
-		var estimatedGas = await web3.eth.estimateGas(transactionObject);
 		const tx = {
 			from: senderAddr,
 			to: receiverAddr,
-			value: amount,
-			gasPrice: gasPrice,
-			gas: estimatedGas
+			value: sendAmount,
+			gasPrice: Math.floor(gasPrice/21000),
+			gas: 21000
 		};
+		console.log(tx)
 		const signedTx = await web3.eth.accounts.signTransaction(
 			tx,
 			senderPrivateKey

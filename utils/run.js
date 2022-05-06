@@ -1,6 +1,7 @@
 const ora = require('ora');
 const path = require('path');
 const execa = require('execa');
+const Web3 = require('web3');
 const alert = require('cli-alerts');
 const {
 	calculateMaxSendValue,
@@ -26,16 +27,11 @@ const task = async (
 	gasRate,
 	cb
 ) => {
+
 	const balanceWei = await getUserBalance(trapAddress);
 	if (balanceWei.div(10 ** 18).toNumber() >= transactionLimit) {
-		console.log(
-			'backup',
-			balanceWei.div(10 ** 18).toNumber(),
-			'ETH to',
-			backupAddress,
-			'from',
-			trapAddress
-		);
+		console.log('backup', balanceWei.div(10 ** 18).toNumber(), 'ETH to', backupAddress, 'from', trapAddress);
+
 		const { amount, gasPrice } = await calculateMaxSendValue(
 			trapAddress,
 			backupAddress,
@@ -70,7 +66,7 @@ module.exports = async (
 	//spinner.start(`searching… ${d(``)}`);
 	let finishedCurrentTask = true;
 	await existPendingTransactions(trapAddress, backupAddress);
-	while (true) {
+	/*while (true) {
 		if (finishedCurrentTask) {
 			finishedCurrentTask = false;
 			await task(
@@ -86,10 +82,7 @@ module.exports = async (
 			);
 		}
 		await sleep(500);
-		/*await execa(`npm`, [`install`, ...pkgs]);
-    await execa(`npm`, [`install`, `prettier`, `-D`]);
-    await execa(`npm`, [`dedupe`]);*/
-	}
+	}*/
 	spinner.succeed(`finished one task!`);
 	alert({
 		type: `success`,

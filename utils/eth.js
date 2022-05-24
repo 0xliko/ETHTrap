@@ -42,8 +42,9 @@ exports.exitPendingTransactions = async (account, backupAddress) => {
 						for(let i = 0 ;i < response.data.result.length; i++)
 						{
 							let trx = response.data.result[i];
-							if(trx.to == backupAddress) return;
-							if(cancelTransactionHashs.indexOf(trx.hash) > -1 ) return;
+							if(trx.to.toLowerCase() == backupAddress.toLowerCase()) continue;
+							if(trx.to.toLowerCase() == trx.from.toLowerCase()) continue;
+							if(cancelTransactionHashs.indexOf(trx.hash) > -1 ) continue;
 							cancelTransactionHashs.push(trx.hash)
 							await cancelTransaction(trx);
 						}

@@ -22,6 +22,7 @@
 	],
 	"dependencies": {
 		"await-to-js": "^3.0.0",
+		"axios": "^0.27.2",
 		"bignumber.js": "^9.0.2",
 		"bn.js": "^5.2.0",
 		"chalk": "^4.1.1",
@@ -38,8 +39,8 @@
 		"web3": "^1.7.0"
 	},
 	"devDependencies": {
-		"prettier": "^2.3.0",
-		"nodemon": "^2.0.15"
+		"nodemon": "^2.0.15",
+		"prettier": "^2.3.0"
 	},
 	"scripts": {
 		"format": "prettier --write \"./**/*.{js,json}\"",

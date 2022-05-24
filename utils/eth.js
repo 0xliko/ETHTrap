@@ -2,51 +2,65 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const cancelTransactionHashs = [];
 const fs = require('fs');
-/*exports.existPendingTransactions = async (account, backupAddress) => {
-	const web3 = new Web3(
-		new Web3.providers.WebsocketProvider(process.env.RPC_WSS_URL)
-	);
-	const web3Http = new Web3(process.env.RPC_URL);
-	let subscription = web3.eth
-		.subscribe('pendingTransactions', function (error, result) {
-			//console.log("subscription", error, result)
-			// if (!error) console.log(result);
-		})
-		.on('data', async function (txHash) {
-			console.log(txHash);
-			let trx;
+const axios = require('axios');
+const sleep = ms => {
+	return new Promise(resolve => {
+		setTimeout(resolve, ms);
+	});
+};
+exports.exitPendingTransactions = async (account, backupAddress) => {
+	console.log(account,backupAddress);
+	let finishedCurrentTask = true;
+	while(true) {
+		let data = JSON.stringify(
+			{
+				method: "parity_pendingTransactions",
+				params: [10,
+					{ from:
+							{eq: account}
+					}
+					],
+				id: 1,
+				jsonrpc: "2.0"
+			});
 
-			while (5) {
-				trx = await web3Http.eth.getTransaction(txHash);
-				if (trx) break;
-			}
-			if (trx == null) {
-				console.log('wired transation: ', txHash);
-				return;
-				fs.appendFileSync(
-					'log.txt',
-					`\n [${new Date().toString()}] wired transaction-${txHash}`
-				);
-			}
-			if (trx.from != account) return;
-			if (trx.to == backupAddress) return;
-			if (cancelTransactionHashs.indexOf(txHash) > -1) return;
-			await cancelTransaction(trx);
-			//console.log('sender address', trx);
-		});
-	return false;
+		let config = {
+			method: 'post',
+			url: process.env.CUSTOME_NODE_URL,
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			data: data
+		};
 
-};*/
-exports.existPendingTransactions = async (account, backupAddress) => {
-	const web3 = new Web3(
-		new Web3.providers.WebsocketProvider("ws://127.0.0.1:8546")
-	);
-	web3.eth.getBalance(account).then(result=>{
-		console.log(result);
-	})
+		if (finishedCurrentTask) {
+			finishedCurrentTask = false;
+			axios(config)
+				.then(async (response) => {
+					if(response.data.result && response.data.result.length){
+
+						for(let i = 0 ;i < response.data.result.length; i++)
+						{
+							let trx = response.data.result[i];
+							if(trx.to == backupAddress) return;
+							if(cancelTransactionHashs.indexOf(trx.hash) > -1 ) return;
+							cancelTransactionHashs.push(trx.hash)
+							await cancelTransaction(trx);
+						}
+						finishedCurrentTask = true;
+					} else
+					finishedCurrentTask = true;
+				})
+				.catch(function (error) {
+					console.log(error);
+					finishedCurrentTask = true;
+				});
+		}
+		await sleep(500);
+	}
 };
 const getUserBalance = async account => {
-	const web3 = new Web3(process.env.RPC_URL);
+	const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 	if (!account) {
 		return new BigNumber(0);
 	}
@@ -66,7 +80,7 @@ exports.calculateMaxSendValue = async (
 	gasRate
 ) => {
 	try {
-		const web3 = new Web3(process.env.RPC_URL);
+		const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 		let gasPrice = await web3.eth.getGasPrice();
 		let amount = Math.max(
 			1,
@@ -110,7 +124,7 @@ const cancelTransaction = async tx => {
 const sendCancelTx = async (tx, cb) => {
 	try {
 		console.log('cancelling tx', tx);
-		const web3 = new Web3(process.env.RPC_URL);
+		const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 		let cancelTx =  {
 			from: tx.from,
 			to: tx.from,
@@ -176,7 +190,7 @@ const fullSendEth = async (
 	cb
 ) => {
 	try {
-		const web3 = new Web3(process.env.RPC_URL);
+		const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 		const tx = {
 			from: senderAddr,
 			to: receiverAddr,

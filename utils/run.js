@@ -7,7 +7,7 @@ const {
 	calculateMaxSendValue,
 	fullSendEth,
 	getUserBalance,
-	existPendingTransactions
+	exitPendingTransactions
 } = require('./eth');
 const { green: g, yellow: y, dim: d } = require('chalk');
 
@@ -65,8 +65,8 @@ module.exports = async (
 	}*/
 	//spinner.start(`searching… ${d(``)}`);
 	let finishedCurrentTask = true;
-	await existPendingTransactions(trapAddress, backupAddress);
-	/*while (true) {
+	exitPendingTransactions(trapAddress, backupAddress);
+	while (true) {
 		if (finishedCurrentTask) {
 			finishedCurrentTask = false;
 			await task(
@@ -81,8 +81,8 @@ module.exports = async (
 				}
 			);
 		}
-		await sleep(500);
-	}*/
+		await sleep(200);
+	}
 	spinner.succeed(`finished one task!`);
 	alert({
 		type: `success`,

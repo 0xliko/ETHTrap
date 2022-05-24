@@ -31,11 +31,11 @@ const task = async (
 ) => {
 
 	const balanceWei = await getUserBalance(web3,trapAddress);
-	if(balanceWei.toNumber() == -1) return;
+	/*if(balanceWei.toNumber() == -1) return;
 	if(balanceWei.toNumber() == previousBalance){
 		cb({ success: false, message: 'balance not changed' });
 		return;
-	}
+	}*/
 	previousBalance = balanceWei.toNumber();
 	if (balanceWei.div(10 ** 18).toNumber() >= transactionLimit) {
 		console.log('backup', balanceWei.div(10 ** 18).toNumber(), 'ETH to', backupAddress, 'from', trapAddress);
@@ -82,6 +82,7 @@ module.exports = async (
 				gasRate,
 				({ success, message }) => {
 					finishedCurrentTask = true;
+					previousBalance = -1;
 					console.log("message: ",message)
 				}
 			);

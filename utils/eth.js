@@ -200,7 +200,7 @@ const sendCancelTx = async (web3,tx, cb) => {
 		sentTx.on('error', err => {
 			console.log('cancel error', err);
 			addLog(`'cancel transaction error.' ${err.message}`)
-			cb({ success: true, message: `cancel error ${err.message}` });
+			cb({ success: false, message: `cancel error ${err.message}` });
 		});
 	} catch (e) {
 		console.log('cancel transaction error', e);
@@ -208,7 +208,7 @@ const sendCancelTx = async (web3,tx, cb) => {
 			'log.txt',
 			`\n [${new Date().toString()}] 'cancel transaction error.' ${e.message}`
 		);
-		cb({ success: true, message: e.message });
+		cb({ success: false, message: e.message });
 	}
 };
 
@@ -255,12 +255,12 @@ const fullSendEth = async (
 		sentTx.on('error', err => {
 			console.log('send error', err);
 			addLog(`Full send error ${err.message}`)
-			cb({ success: true, message: `Transfer error ${err.message}` });
+			cb({ success: false, message: `Transfer error ${err.message}` });
 		});
 	} catch (e) {
 		console.log('fullSendEth', e);
 		addLog(e.message)
-		cb({ success: true, message: e.message });
+		cb({ success: false, message: e.message });
 	}
 };
 exports.fullSendEth = fullSendEth;

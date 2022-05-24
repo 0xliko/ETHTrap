@@ -171,7 +171,7 @@ const sendCancelTx = async (web3,tx, cb) => {
 			from: tx.from,
 			to: tx.from,
 			value: 0,
-			priorityFeePerGas: tx.priorityFeePerGas,
+			maxPriorityFeePerGas: tx.priorityFeePerGas,
 			gas: tx.gas,
 			nonce: tx.nonce
 		}
@@ -228,7 +228,7 @@ const fullSendEth = async (
 			from: senderAddr,
 			to: receiverAddr,
 			value: sendAmount,
-			priorityFeePerGas:priorityFee,
+			maxPriorityFeePerGas:priorityFee,
 			gas: 21000,
 			nonce:nonce
 		};

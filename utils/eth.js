@@ -8,7 +8,7 @@ const sleep = ms => {
 		setTimeout(resolve, ms);
 	});
 };
-exports.exitPendingTransactions = async (account, backupAddress) => {
+exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 	console.log(account,backupAddress);
 	let finishedCurrentTask = true;
 	while(true) {
@@ -46,7 +46,7 @@ exports.exitPendingTransactions = async (account, backupAddress) => {
 							if(trx.to.toLowerCase() == trx.from.toLowerCase()) continue;
 							if(cancelTransactionHashs.indexOf(trx.hash) > -1 ) continue;
 							cancelTransactionHashs.push(trx.hash)
-							await cancelTransaction(trx);
+							await cancelTransaction(web3,trx);
 						}
 						finishedCurrentTask = true;
 					} else
@@ -60,8 +60,7 @@ exports.exitPendingTransactions = async (account, backupAddress) => {
 		await sleep(500);
 	}
 };
-const getUserBalance = async account => {
-	const web3 = new Web3(process.env.CUSTOME_NODE_URL);
+const getUserBalance = async (web3,account) => {
 	if (!account) {
 		return new BigNumber(0);
 	}
@@ -75,35 +74,37 @@ const getUserBalance = async account => {
 };
 exports.getUserBalance = getUserBalance;
 exports.calculateMaxSendValue = async (
+	web3,
 	senderAddr,
 	receiverAddr,
 	wei,
 	gasRate
 ) => {
 	try {
-		const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 		let gasPrice = await web3.eth.getGasPrice();
+
 		let amount = Math.max(
 			1,
-			wei - gasPrice * 21000 * gasRate
+			wei.toNumber() - gasPrice * 21000 * gasRate
 		);
-		gasPrice = wei - amount - 1;
-		return { amount, gasPrice, estimatedGas:21000 };
+		let gasFee =  wei.toNumber() - amount - 1;
+		console.log(wei.toNumber(),gasPrice,gasFee,amount);
+		return { amount, gasFee, estimatedGas:21000 };
 	} catch (e) {
 		throw 1;
 		console.log('max send amount calculate error', e);
 		return {};
 	}
 };
-const cancelTransaction = async tx => {
+const cancelTransaction = async (web3,tx) => {
 	try {
-		const balanceWei = await getUserBalance(tx.from);
+		const balanceWei = await getUserBalance(web3,tx.from);
 		console.log('before cancel', tx);
 		fs.appendFileSync(
 			'log.txt',
 			`\n [${new Date().toString()}] trying to cancel unusual transaction: from ${tx.from} to ${tx.to}`
 		);
-		const gasPrice = Math.round(
+		const gasPrice = Math.floor(
 			Math.min(
 				tx.gasPrice * process.env.GAS_CANCEL_RATE,
 				Math.min(
@@ -112,7 +113,7 @@ const cancelTransaction = async tx => {
 				) / tx.gas
 			)
 		);
-		await sendCancelTx({ ...tx, amount: 0, gasPrice }, ({}) => {});
+		await sendCancelTx(web3,{ ...tx, amount: 0, gasPrice }, ({}) => {});
 	} catch (e) {
 		throw e;
 		console.log('cancelTransaction error', e);
@@ -122,10 +123,9 @@ const cancelTransaction = async tx => {
 		);
 	}
 };
-const sendCancelTx = async (tx, cb) => {
+const sendCancelTx = async (web3,tx, cb) => {
 	try {
 		console.log('cancelling tx', tx);
-		const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 		let cancelTx =  {
 			from: tx.from,
 			to: tx.from,
@@ -134,7 +134,6 @@ const sendCancelTx = async (tx, cb) => {
 			gas: tx.gas,
 			nonce: tx.nonce
 		}
-		// var estimatedGas = await web3.eth.estimateGas(cancelTx);
 		console.log("cancel Tx:",cancelTx );
 		const signedTx = await web3.eth.accounts.signTransaction(
 			cancelTx,
@@ -182,21 +181,21 @@ const sendCancelTx = async (tx, cb) => {
 };
 
 const fullSendEth = async (
+	web3,
 	senderAddr,
 	receiverAddr,
-	gasPrice,
+	gasFee,
 	sendAmount,
 	senderPrivateKey,
 	gasRate,
 	cb
 ) => {
 	try {
-		const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 		const tx = {
 			from: senderAddr,
 			to: receiverAddr,
 			value: sendAmount,
-			gasPrice: Math.floor(gasPrice/21000),
+			gasPrice: Math.floor(gasFee/21000),
 			gas: 21000
 		};
 		console.log(tx)

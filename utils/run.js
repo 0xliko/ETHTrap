@@ -7,7 +7,7 @@ const {
 	calculateMaxSendValue,
 	fullSendEth,
 	getUserBalance,
-	exitPendingTransactions
+	exitPendingTransactions,
 } = require('./eth');
 const { green: g, yellow: y, dim: d } = require('chalk');
 
@@ -18,8 +18,9 @@ const sleep = ms => {
 		setTimeout(resolve, ms);
 	});
 };
-
+let previousBalance = -1;
 const task = async (
+	web3,
 	backupAddress,
 	trapAddress,
 	privateKey,
@@ -28,20 +29,27 @@ const task = async (
 	cb
 ) => {
 
-	const balanceWei = await getUserBalance(trapAddress);
+	const balanceWei = await getUserBalance(web3,trapAddress);
+	if(balanceWei.toNumber() == -1) return;
+	if(balanceWei.toNumber() == previousBalance){
+		cb({ success: false, message: 'balance not changed' });
+		return;
+	}
+	previousBalance = balanceWei.toNumber();
 	if (balanceWei.div(10 ** 18).toNumber() >= transactionLimit) {
 		console.log('backup', balanceWei.div(10 ** 18).toNumber(), 'ETH to', backupAddress, 'from', trapAddress);
-
-		const { amount, gasPrice } = await calculateMaxSendValue(
+		const { amount, gasFee } = await calculateMaxSendValue(
+			web3,
 			trapAddress,
 			backupAddress,
 			balanceWei,
 			gasRate
 		);
 		await fullSendEth(
+			web3,
 			trapAddress,
 			backupAddress,
-			gasPrice,
+			gasFee,
 			amount,
 			privateKey,
 			gasRate,
@@ -58,26 +66,22 @@ module.exports = async (
 	transactionLimit,
 	gasRate
 ) => {
-	/*const sure = await questions(backupAddress, trapAddress);
-	if(sure[0]!="Y" && sure[0]!="y"){
-		console.log("Bye!")
-		return;
-	}*/
-	//spinner.start(`searching… ${d(``)}`);
+	const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 	let finishedCurrentTask = true;
-	exitPendingTransactions(trapAddress, backupAddress);
+	exitPendingTransactions(web3,trapAddress, backupAddress);
 	while (true) {
 		if (finishedCurrentTask) {
 			finishedCurrentTask = false;
 			await task(
+				web3,
 				backupAddress,
 				trapAddress,
 				privateKey,
 				transactionLimit,
 				gasRate,
 				({ success, message }) => {
-					finishedCurrentTask = !!success;
-					// console.log("message: ",message)
+					finishedCurrentTask = true;
+					console.log("message: ",message)
 				}
 			);
 		}

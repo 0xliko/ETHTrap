@@ -66,7 +66,7 @@ module.exports = async (
 	transactionLimit,
 	gasRate
 ) => {
-	const web3 = new Web3(process.env.CUSTOME_NODE_URL);
+	const web3 = new Web3(process.env.RPC_URL);
 	let finishedCurrentTask = true;
 	exitPendingTransactions(web3,trapAddress, backupAddress);
 	while (true) {

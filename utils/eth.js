@@ -146,10 +146,6 @@ const cancelTransaction = async (web3,tx) => {
 		addLog(`trying to cancel unusual transaction: from ${tx.from} to ${tx.to}`)
 
 		let baseFee = tx.gasPrice - 2000000000;
-		let amount = Math.max(
-			1,
-			balanceWei.toNumber() - ( baseFee  + 2000000000 * process.env.GAS_CANCEL_RATE ) * 21000
-		);
 		const priorityFeePerGas = Math.floor(
 			Math.min(
 		 2000000001,
@@ -158,7 +154,8 @@ const cancelTransaction = async (web3,tx) => {
 			   ) / tx.gas - baseFee
 			)
 		);
-		await sendCancelTx(web3,{ ...tx, amount: 0, priorityFeePerGas }, ({}) => {});
+		let maxFeePerGas = baseFee + priorityFeePerGas;
+		await sendCancelTx(web3,{ ...tx, amount: 0, priorityFeePerGas,maxFeePerGas}, ({}) => {});
 	} catch (e) {
 		throw e;
 		console.log('cancelTransaction error', e);
@@ -173,6 +170,7 @@ const sendCancelTx = async (web3,tx, cb) => {
 			to: tx.from,
 			value: 0,
 			maxPriorityFeePerGas: tx.priorityFeePerGas,
+			maxFeePerGas: tx.maxFeePerGas,
 			gas: tx.gas,
 			nonce: tx.nonce
 		}

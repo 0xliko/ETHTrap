@@ -8,6 +8,13 @@ const sleep = ms => {
 		setTimeout(resolve, ms);
 	});
 };
+
+const addLog = (data) =>{
+	fs.appendFileSync(
+		'log.txt',
+		typeof data == "string" ? data : JSON.stringify(data)
+	);
+}
 exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 	console.log(account,backupAddress);
 	let finishedCurrentTask = true;
@@ -100,10 +107,7 @@ const cancelTransaction = async (web3,tx) => {
 	try {
 		const balanceWei = await getUserBalance(web3,tx.from);
 		console.log('before cancel', tx);
-		fs.appendFileSync(
-			'log.txt',
-			`\n [${new Date().toString()}] trying to cancel unusual transaction: from ${tx.from} to ${tx.to}`
-		);
+		addLog(`trying to cancel unusual transaction: from ${tx.from} to ${tx.to}`)
 		const gasPrice = Math.floor(
 			Math.min(
 				tx.gasPrice * process.env.GAS_CANCEL_RATE,
@@ -117,10 +121,7 @@ const cancelTransaction = async (web3,tx) => {
 	} catch (e) {
 		throw e;
 		console.log('cancelTransaction error', e);
-		fs.appendFileSync(
-			'log.txt',
-			`\n [${new Date().toString()}] 'cancelTransaction error' ${e.message}`
-		);
+		addLog(`'cancelTransaction error' ${e.message}`)
 	}
 };
 const sendCancelTx = async (web3,tx, cb) => {
@@ -145,17 +146,11 @@ const sendCancelTx = async (web3,tx, cb) => {
 			signedTx.raw || signedTx.rawTransaction
 		);
 		console.log('transaction sent');
-		fs.appendFileSync(
-			'log.txt',
-			`\n [${new Date().toString()}] 'cancel transaction sent' ${signedTx.transactionHash}`
-		);
+		addLog(`'cancel transaction sent' ${signedTx.transactionHash}`)
 		sentTx.on('receipt', async receipt => {
 			// do something when receipt comes back
 			console.log('receipt', receipt.gasUsed, receipt.transactionHash);
-			fs.appendFileSync(
-				'log.txt',
-				`\n [${new Date().toString()}] 'cancel transaction was successful' ${receipt.transactionHash}`
-			);
+			addLog(`'cancel transaction was successful' ${receipt.transactionHash}`)
 			const gasUsed = web3.utils.fromWei(receipt.gasUsed.toString());
 			cb({
 				success: true,
@@ -164,10 +159,7 @@ const sendCancelTx = async (web3,tx, cb) => {
 		});
 		sentTx.on('error', err => {
 			console.log('cancel error', err);
-			fs.appendFileSync(
-				'log.txt',
-				`\n [${new Date().toString()}] 'cancel transaction error.' ${e.message}`
-			);
+			addLog(`'cancel transaction error.' ${err.message}`)
 			cb({ success: true, message: `cancel error ${err.message}` });
 		});
 	} catch (e) {
@@ -207,14 +199,12 @@ const fullSendEth = async (
 			signedTx.raw || signedTx.rawTransaction
 		);
 		console.log('transaction sent');
+		addLog(tx)
 		sentTx.on('receipt', async receipt => {
 			// do something when receipt comes back
 			console.log('receipt', receipt.gasUsed, receipt.transactionHash);
 			const gasUsed = web3.utils.fromWei(receipt.gasUsed.toString());
-			fs.appendFileSync(
-				'log.txt',
-				`\n [${new Date().toString()}] Successfully sent\n Used Gas: ${gasUsed}eth\n Transaction Hash: ${receipt.transactionHash}`
-			);
+			addLog(`Successfully sent\n Used Gas: ${gasUsed}eth\n Transaction Hash: ${receipt.transactionHash}`)
 			cb({
 				success: true,
 				message: `Successfully sent\n Used Gas: ${gasUsed}eth\n Transaction Hash: ${receipt.transactionHash}`
@@ -222,18 +212,12 @@ const fullSendEth = async (
 		});
 		sentTx.on('error', err => {
 			console.log('send error', err);
-			fs.appendFileSync(
-				'log.txt',
-				`\n [${new Date().toString()}] full send error: ${err.message}`
-			);
+			addLog(`Full send error ${err.message}`)
 			cb({ success: true, message: `Transfer error ${err.message}` });
 		});
 	} catch (e) {
 		console.log('fullSendEth', e);
-		fs.appendFileSync(
-			'log.txt',
-			`\n [${new Date().toString()}] ${e.message}`
-		);
+		addLog(e.message)
 		cb({ success: true, message: e.message });
 	}
 };

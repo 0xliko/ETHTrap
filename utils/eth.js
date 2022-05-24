@@ -64,7 +64,7 @@ exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 					finishedCurrentTask = true;
 				});
 		}
-		await sleep(500);
+		await sleep(100);
 	}
 };
 const getUserBalance = async (web3,account) => {
@@ -183,12 +183,14 @@ const fullSendEth = async (
 	cb
 ) => {
 	try {
+		let nonce = await web3.eth.getTransactionCount(senderAddr);
 		const tx = {
 			from: senderAddr,
 			to: receiverAddr,
 			value: sendAmount,
 			gasPrice: Math.floor(gasFee/21000),
-			gas: 21000
+			gas: 21000,
+			nonce: nonce + 1
 		};
 		console.log(tx)
 		const signedTx = await web3.eth.accounts.signTransaction(

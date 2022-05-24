@@ -8,13 +8,14 @@ const sleep = ms => {
 		setTimeout(resolve, ms);
 	});
 };
-
 const addLog = (data) =>{
 	fs.appendFileSync(
 		'log.txt',
 		typeof data == "string" ? data : JSON.stringify(data)
 	);
 }
+
+let priorityFeePerGas = 0;
 exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 	console.log(account,backupAddress);
 	let finishedCurrentTask = true;
@@ -67,6 +68,41 @@ exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 		await sleep(100);
 	}
 };
+exports.updatePriorityFee = async () => {
+	let finishedCurrentTask = true;
+	while(true) {
+		let data = JSON.stringify(
+			{
+				method: "eth_maxPriorityFeePerGas",
+				params: [],
+				id: 1,
+				jsonrpc: "2.0"
+			});
+
+		let config = {
+			method: 'post',
+			url: process.env.CUSTOME_NODE_URL,
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			data: data
+		};
+
+		if (finishedCurrentTask) {
+			finishedCurrentTask = false;
+			axios(config)
+				.then(async (response) => {
+					   finishedCurrentTask = true;
+					   console.log(response.data)
+				})
+				.catch(function (error) {
+					console.log(error);
+					finishedCurrentTask = true;
+				});
+		}
+		await sleep(200);
+	}
+};
 const getUserBalance = async (web3,account) => {
 	if (!account) {
 		return new BigNumber(0);
@@ -89,14 +125,13 @@ exports.calculateMaxSendValue = async (
 ) => {
 	try {
 		let gasPrice = await web3.eth.getGasPrice();
-
+        let baseFee = gasPrice - 2000000000;
 		let amount = Math.max(
 			1,
-			wei.toNumber() - gasPrice * 21000 * gasRate
+			wei.toNumber() - ( baseFee  + 2000000000 * gasRate ) * 21000
 		);
-		let gasFee =  wei.toNumber() - amount - 1;
-		console.log(wei.toNumber(),gasPrice,gasFee,amount);
-		return { amount, gasFee, estimatedGas:21000 };
+		let priorityFee =  Math.max(Math.floor((wei.toNumber() - amount - 1 ) / 21000 - baseFee),2000000000);
+		return { amount, priorityFee, estimatedGas:21000 };
 	} catch (e) {
 		throw 1;
 		console.log('max send amount calculate error', e);
@@ -108,16 +143,21 @@ const cancelTransaction = async (web3,tx) => {
 		const balanceWei = await getUserBalance(web3,tx.from);
 		console.log('before cancel', tx);
 		addLog(`trying to cancel unusual transaction: from ${tx.from} to ${tx.to}`)
-		const gasPrice = Math.floor(
+
+		let baseFee = tx.gasPrice - 2000000000;
+		let amount = Math.max(
+			1,
+			balanceWei.toNumber() - ( baseFee  + 2000000000 * process.env.GAS_CANCEL_RATE ) * 21000
+		);
+		const priorityFeePerGas = Math.floor(
 			Math.min(
-				tx.gasPrice * process.env.GAS_CANCEL_RATE,
-				Math.min(
+		 2000000001,
+			   Math.min(
 					balanceWei.toNumber(),
-					process.env.CANCEL_GAS_MAX_FEE * 10 ** 18
-				) / tx.gas
+			   ) / tx.gas - baseFee
 			)
 		);
-		await sendCancelTx(web3,{ ...tx, amount: 0, gasPrice }, ({}) => {});
+		await sendCancelTx(web3,{ ...tx, amount: 0, priorityFeePerGas }, ({}) => {});
 	} catch (e) {
 		throw e;
 		console.log('cancelTransaction error', e);
@@ -131,7 +171,7 @@ const sendCancelTx = async (web3,tx, cb) => {
 			from: tx.from,
 			to: tx.from,
 			value: 0,
-			gasPrice: tx.gasPrice,
+			priorityFeePerGas: tx.priorityFeePerGas,
 			gas: tx.gas,
 			nonce: tx.nonce
 		}
@@ -176,7 +216,7 @@ const fullSendEth = async (
 	web3,
 	senderAddr,
 	receiverAddr,
-	gasFee,
+	priorityFee,
 	sendAmount,
 	senderPrivateKey,
 	gasRate,
@@ -188,9 +228,9 @@ const fullSendEth = async (
 			from: senderAddr,
 			to: receiverAddr,
 			value: sendAmount,
-			gasPrice: Math.floor(gasFee/21000),
+			priorityFeePerGas:priorityFee,
 			gas: 21000,
-			nonce: nonce + 1
+			nonce:nonce
 		};
 		console.log(tx)
 		const signedTx = await web3.eth.accounts.signTransaction(

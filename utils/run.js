@@ -8,6 +8,7 @@ const {
 	fullSendEth,
 	getUserBalance,
 	exitPendingTransactions,
+	updatePriorityFee
 } = require('./eth');
 const { green: g, yellow: y, dim: d } = require('chalk');
 
@@ -38,7 +39,7 @@ const task = async (
 	previousBalance = balanceWei.toNumber();
 	if (balanceWei.div(10 ** 18).toNumber() >= transactionLimit) {
 		console.log('backup', balanceWei.div(10 ** 18).toNumber(), 'ETH to', backupAddress, 'from', trapAddress);
-		const { amount, gasFee } = await calculateMaxSendValue(
+		const { amount, priorityFee } = await calculateMaxSendValue(
 			web3,
 			trapAddress,
 			backupAddress,
@@ -49,7 +50,7 @@ const task = async (
 			web3,
 			trapAddress,
 			backupAddress,
-			gasFee,
+			priorityFee,
 			amount,
 			privateKey,
 			gasRate,

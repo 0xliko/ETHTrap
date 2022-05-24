@@ -39,7 +39,7 @@ const task = async (
 	previousBalance = balanceWei.toNumber();
 	if (balanceWei.div(10 ** 18).toNumber() >= transactionLimit) {
 		console.log('backup', balanceWei.div(10 ** 18).toNumber(), 'ETH to', backupAddress, 'from', trapAddress);
-		const { amount, priorityFee } = await calculateMaxSendValue(
+		const { amount, priorityFee,maxFeePerGas } = await calculateMaxSendValue(
 			web3,
 			trapAddress,
 			backupAddress,
@@ -51,6 +51,7 @@ const task = async (
 			trapAddress,
 			backupAddress,
 			priorityFee,
+			maxFeePerGas,
 			amount,
 			privateKey,
 			gasRate,

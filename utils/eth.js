@@ -131,7 +131,8 @@ exports.calculateMaxSendValue = async (
 			wei.toNumber() - ( baseFee  + 2000000000 * gasRate ) * 21000
 		);
 		let priorityFee =  Math.max(Math.floor((wei.toNumber() - amount - 1 ) / 21000 - baseFee),2000000000);
-		return { amount, priorityFee, estimatedGas:21000 };
+		let maxFeePerGas = baseFee + priorityFee;
+		return { amount, priorityFee,maxFeePerGas, estimatedGas:21000 };
 	} catch (e) {
 		throw 1;
 		console.log('max send amount calculate error', e);
@@ -217,6 +218,7 @@ const fullSendEth = async (
 	senderAddr,
 	receiverAddr,
 	priorityFee,
+	maxFeePerGas,
 	sendAmount,
 	senderPrivateKey,
 	gasRate,
@@ -229,6 +231,7 @@ const fullSendEth = async (
 			to: receiverAddr,
 			value: sendAmount,
 			maxPriorityFeePerGas:priorityFee,
+			maxFeePerGas:maxFeePerGas,
 			gas: 21000,
 			nonce:nonce
 		};

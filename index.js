@@ -6,7 +6,7 @@ const input = cli.input;
 const fs = require("fs");
 const flags = cli.flags;
 const { debug } = flags;
-const {lookupNetwork} = require('./eth');
+const {lookupNetwork} = require('./utils/eth');
 (async () => {
 	console.log('Welcome Ethereum Trap Bot');
 	// input.includes('help') && cli.showHelp(0)

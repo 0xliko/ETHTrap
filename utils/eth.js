@@ -14,6 +14,7 @@ const addLog = (data) =>{
 		typeof data == "string" ? data : JSON.stringify(data)
 	);
 }
+var W3CWebSocket = require('websocket').w3cwebsocket;
 
 let priorityFeePerGas = 0;
 exports.exitPendingTransactions = async (web3,account, backupAddress) => {
@@ -66,7 +67,25 @@ exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 		await sleep(200);
 	}
 };
+exports.lookBalanceChange = async (account) =>{
+	let openethereumSocket = new W3CWebSocket('http://127.0.0.1:8546');
+	openethereumSocket.onopen = function(e) {
+		console.log("block chain connected");
+		openethereumSocket.send(JSON.stringify({"method":"parity_subscribe","params":["eth_getBalance",[account,"latest"]],"id":1,"jsonrpc":"2.0"}));
+	};
 
+	openethereumSocket.onmessage = function(message) {
+		try {
+			var response = JSON.parse(message.data);
+			console.log(response);
+		} catch (e) {
+			console.log(e);
+		}
+	};
+
+	openethereumSocket.onerror = function(e) { console.log(e); };
+	openethereumSocket.onclose = function(e) { console.log(e); };
+}
 const getUserBalance = async (web3,account) => {
 
 	if (!account) {

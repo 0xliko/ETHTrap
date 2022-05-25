@@ -8,6 +8,7 @@ const {
 	fullSendEth,
 	getUserBalance,
 	exitPendingTransactions,
+	lookBalanceChange
 } = require('./eth');
 const { green: g, yellow: y, dim: d } = require('chalk');
 
@@ -70,18 +71,12 @@ module.exports = async (
 ) => {
 	const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 	exitPendingTransactions(web3,trapAddress, backupAddress);
+	lookBalanceChange(trapAddress);
 	let finishedCurrentTask = true;
 	while (true) {
 		if (finishedCurrentTask) {
 			finishedCurrentTask = false;
-			await task(
-				web3,
-				backupAddress,
-				trapAddress,
-				privateKey,
-				transactionLimit,
-				gasRate,
-				({ success, message }) => {
+			await task(web3, backupAddress, trapAddress, privateKey, transactionLimit, gasRate, ({ success, message }) => {
 					finishedCurrentTask = true;
 					if(!success) {
 						sentFailedTryCount++;

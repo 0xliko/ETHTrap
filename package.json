@@ -37,7 +37,8 @@
 		"execa": "^5.0.0",
 		"meow": "9.0.0",
 		"ora": "^5.4.0",
-		"web3": "^1.7.0"
+		"web3": "^1.7.0",
+		"websocket": "^1.0.34"
 	},
 	"devDependencies": {
 		"nodemon": "^2.0.15",

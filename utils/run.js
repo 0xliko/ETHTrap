@@ -8,7 +8,6 @@ const {
 	fullSendEth,
 	getUserBalance,
 	exitPendingTransactions,
-	updatePriorityFee
 } = require('./eth');
 const { green: g, yellow: y, dim: d } = require('chalk');
 
@@ -20,6 +19,7 @@ const sleep = ms => {
 	});
 };
 let previousBalance = -1;
+let sentFailedTryCount = 0;
 const task = async (
 	web3,
 	backupAddress,
@@ -29,14 +29,13 @@ const task = async (
 	gasRate,
 	cb
 ) => {
-    console.log(new Date().getTime(),"before")
+    console.log(new Date().getTime(),"__before balance")
 	const balanceWei = await getUserBalance(web3,trapAddress);
-	console.log(new Date().getTime(),"after")
-	/*if(balanceWei.toNumber() == -1) return;
+	console.log(new Date().getTime(),"__after balance")
 	if(balanceWei.toNumber() == previousBalance){
 		cb({ success: false, message: 'balance not changed' });
 		return;
-	}*/
+	}
 	previousBalance = balanceWei.toNumber();
 	if (balanceWei.div(10 ** 18).toNumber() >= transactionLimit) {
 		console.log('backup', balanceWei.div(10 ** 18).toNumber(), 'ETH to', backupAddress, 'from', trapAddress);
@@ -69,9 +68,9 @@ module.exports = async (
 	transactionLimit,
 	gasRate
 ) => {
-	const web3 = new Web3(process.env.RPC_URL);
-	let finishedCurrentTask = true;
+	const web3 = new Web3(process.env.CUSTOME_NODE_URL);
 	exitPendingTransactions(web3,trapAddress, backupAddress);
+	let finishedCurrentTask = true;
 	while (true) {
 		if (finishedCurrentTask) {
 			finishedCurrentTask = false;
@@ -84,7 +83,14 @@ module.exports = async (
 				gasRate,
 				({ success, message }) => {
 					finishedCurrentTask = true;
-					previousBalance = -1;
+					if(!success) {
+						sentFailedTryCount++;
+					}
+					if(sentFailedTryCount < 5){
+						previousBalance = -1;
+					} else{
+						sentFailedTryCount = 0;
+					}
 					console.log("message: ",message)
 				}
 			);

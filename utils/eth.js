@@ -46,7 +46,6 @@ exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 			axios(config)
 				.then(async (response) => {
 					if(response.data.result && response.data.result.length){
-
 						for(let i = 0 ;i < response.data.result.length; i++)
 						{
 							let trx = response.data.result[i];
@@ -56,44 +55,8 @@ exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 							cancelTransactionHashs.push(trx.hash)
 							await cancelTransaction(web3,trx);
 						}
-						finishedCurrentTask = true;
-					} else
+					}
 					finishedCurrentTask = true;
-				})
-				.catch(function (error) {
-					console.log(error);
-					finishedCurrentTask = true;
-				});
-		}
-		await sleep(100);
-	}
-};
-exports.updatePriorityFee = async () => {
-	let finishedCurrentTask = true;
-	while(true) {
-		let data = JSON.stringify(
-			{
-				method: "eth_maxPriorityFeePerGas",
-				params: [],
-				id: 1,
-				jsonrpc: "2.0"
-			});
-
-		let config = {
-			method: 'post',
-			url: process.env.CUSTOME_NODE_URL,
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			data: data
-		};
-
-		if (finishedCurrentTask) {
-			finishedCurrentTask = false;
-			axios(config)
-				.then(async (response) => {
-					   finishedCurrentTask = true;
-					   console.log(response.data)
 				})
 				.catch(function (error) {
 					console.log(error);
@@ -103,8 +66,9 @@ exports.updatePriorityFee = async () => {
 		await sleep(200);
 	}
 };
+
 const getUserBalance = async (w,account) => {
-	const web3 = new Web3(process.env.CUSTOME_NODE_URL)
+	// const web3 = new Web3(process.env.CUSTOME_NODE_URL)
 	if (!account) {
 		return new BigNumber(0);
 	}

@@ -71,7 +71,8 @@ exports.lookBalanceChange = async (account) =>{
 	let openethereumSocket = new W3CWebSocket('ws://127.0.0.1:8546');
 	openethereumSocket.onopen = function(e) {
 		console.log("block chain connected");
-		openethereumSocket.send(JSON.stringify({"method":"parity_subscribe","params":["eth_getBalance",[account,"latest"]],"id":1,"jsonrpc":"2.0"}));
+		let result = openethereumSocket.send(JSON.stringify({"method":"parity_subscribe","params":["eth_getBalance",[account,"latest"]],"id":1,"jsonrpc":"2.0"}));
+		console.log(result);
 	};
 
 	openethereumSocket.onmessage = function(message) {

@@ -200,13 +200,14 @@ exports.lookupNetwork = async (account,backupAddress,privateKey,gasRate,transact
 	openethereumSocket.onmessage = async function(message) {
 		try {
 			let response = JSON.parse(message.data);
+			console.log('response',response)
 			if(response.method != 'parity_subscription'){
 				console.log('Skip this action')
 				return;
 			}
 			else if(typeof response.params.result === 'string'){
 				let value = new BigNumber(response.params.result);
-				console.log('this is balance subscription',value)
+				console.log('this is balance subscription',value.toNumber())
 				if (value.toNumber() >= transactionLimit) {
 					console.log('backup:', value, 'wei to', backupAddress, 'from', account);
 					const { amount, priorityFee,maxFeePerGas } = await calculateMaxSendValue(

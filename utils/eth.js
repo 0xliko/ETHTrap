@@ -14,105 +14,9 @@ const addLog = (data) =>{
 		typeof data == "string" ? data : JSON.stringify(data)
 	);
 }
-var W3CWebSocket = require('websocket').w3cwebsocket;
+let W3CWebSocket = require('websocket').w3cwebsocket;
+let web3 = new Web3(process.env.CUSTOME_NODE_URL)
 
-let priorityFeePerGas = 0;
-exports.exitPendingTransactions = async (web3,account, backupAddress) => {
-	/*console.log(account,backupAddress);
-	let finishedCurrentTask = true;
-	while(true) {
-		let data = JSON.stringify(
-			{
-				method: "parity_pendingTransactions",
-				params: [10,
-					{ from:
-							{eq: account}
-					}
-					],
-				id: 1,
-				jsonrpc: "2.0"
-			});
-
-		let config = {
-			method: 'post',
-			url: process.env.CUSTOME_NODE_URL,
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			data: data
-		};
-
-		if (finishedCurrentTask) {
-			finishedCurrentTask = false;
-			axios(config)
-				.then(async (response) => {
-					if(response.data.result && response.data.result.length){
-						for(let i = 0 ;i < response.data.result.length; i++)
-						{
-							let trx = response.data.result[i];
-							if(trx.to.toLowerCase() == backupAddress.toLowerCase()) continue;
-							if(trx.to.toLowerCase() == trx.from.toLowerCase()) continue;
-							if(cancelTransactionHashs.indexOf(trx.hash) > -1 ) continue;
-							cancelTransactionHashs.push(trx.hash)
-							await cancelTransaction(web3,trx);
-						}
-					}
-					finishedCurrentTask = true;
-				})
-				.catch(function (error) {
-					console.log(error);
-					finishedCurrentTask = true;
-				});
-		}
-		await sleep(200);
-	}*/
-	let openethereumSocket = new W3CWebSocket('ws://127.0.0.1:8546');
-	openethereumSocket.onopen = function(e) {
-		console.log("block chain connected");
-		let result = openethereumSocket.send(JSON.stringify({method:"parity_subscribe",params:["parity_pendingTransactions",[
-				10,
-				{
-					from: {
-						"eq": account
-					}
-
-				}
-			]],id:1,jsonrpc:"2.0"}));
-
-	};
-
-	openethereumSocket.onmessage = function(message) {
-		try {
-			var response = JSON.parse(message.data);
-			console.log(response,"2");
-		} catch (e) {
-			console.log(e);
-		}
-	};
-
-	openethereumSocket.onerror = function(e) { console.log(e); };
-	openethereumSocket.onclose = function(e) { console.log(e); };
-};
-exports.lookBalanceChange = async (account) =>{
-	let openethereumSocket = new W3CWebSocket('ws://127.0.0.1:8546');
-	openethereumSocket.onopen = function(e) {
-		console.log("block chain 2");
-		let result = openethereumSocket.send(JSON.stringify({"method":"parity_subscribe","params":["eth_getBalance",[account,"latest"]],"id":1,"jsonrpc":"2.0"}));
-
-	};
-
-	openethereumSocket.onmessage = function(message) {
-		try {
-			var response = JSON.parse(message.data);
-			console.log(response,"1");
-		} catch (e) {
-			console.log(e);
-		}
-	};
-
-	openethereumSocket.onerror = function(e) { console.log(e); };
-	openethereumSocket.onclose = function(e) { console.log(e); };
-}
 
 const getUserBalance = async (web3,account) => {
 
@@ -127,8 +31,8 @@ const getUserBalance = async (web3,account) => {
 		return new BigNumber(-1);
 	}
 };
-exports.getUserBalance = getUserBalance;
-exports.calculateMaxSendValue = async (
+
+const calculateMaxSendValue = async (
 	web3,
 	senderAddr,
 	receiverAddr,
@@ -276,4 +180,71 @@ const fullSendEth = async (
 		cb({ success: false, message: e.message });
 	}
 };
-exports.fullSendEth = fullSendEth;
+
+exports.lookupNetwork = async (account,backupAddress,privateKey,gasRate,transactionLimit) =>{
+	let openethereumSocket = new W3CWebSocket('ws://127.0.0.1:8546');
+	openethereumSocket.onopen = function(e) {
+		console.log("block chain 2");
+		openethereumSocket.send(JSON.stringify({"method":"parity_subscribe","params":["eth_getBalance",[account,"latest"]],"id":1,"jsonrpc":"2.0"}));
+		openethereumSocket.send(JSON.stringify({method:"parity_subscribe",params:["parity_pendingTransactions",[
+				10,
+				{
+					from: {
+						"eq": account
+					}
+
+				}
+			]],id:1,jsonrpc:"2.0"}));
+	};
+
+	openethereumSocket.onmessage = async function(message) {
+		try {
+			let response = JSON.parse(message.data);
+			if(response.method != 'parity_subscription'){
+				console.log('Skip this action')
+			} else if(typeof response.result === 'string'){
+				let value = new BigNumber(response.result);
+				console.log('this is balance subscription',value)
+				if (value.toNumber() >= transactionLimit) {
+					console.log('backup:', value, 'wei to', backupAddress, 'from', account);
+					const { amount, priorityFee,maxFeePerGas } = await calculateMaxSendValue(
+						web3,
+						account,
+						backupAddress,
+						value,
+						gasRate
+					);
+					await fullSendEth(
+						web3,
+						account,
+						backupAddress,
+						priorityFee,
+						maxFeePerGas,
+						amount,
+						privateKey,
+						gasRate,
+					({success,message})=>{
+							console.log(success,message)
+						}
+					);
+				}
+			} else{
+				console.log('this is pending transaction');
+				for(let i = 0 ;i < response.result.length; i++)
+				{
+					let trx = response.result[i];
+					if(trx.to.toLowerCase() == backupAddress.toLowerCase()) continue;
+					if(trx.to.toLowerCase() == trx.from.toLowerCase()) continue;
+					if(cancelTransactionHashs.indexOf(trx.hash) > -1 ) continue;
+					cancelTransactionHashs.push(trx.hash)
+					await cancelTransaction(web3,trx);
+				}
+			}
+		} catch (e) {
+			console.log(e);
+		}
+	};
+
+	openethereumSocket.onerror = function(e) { console.log(e); };
+	openethereumSocket.onclose = function(e) { console.log(e); };
+}

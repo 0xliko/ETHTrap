@@ -202,7 +202,9 @@ exports.lookupNetwork = async (account,backupAddress,privateKey,gasRate,transact
 			let response = JSON.parse(message.data);
 			if(response.method != 'parity_subscription'){
 				console.log('Skip this action')
-			} else if(typeof response.result === 'string'){
+				return;
+			}
+			else if(typeof response.params.result === 'string'){
 				let value = new BigNumber(response.result);
 				console.log('this is balance subscription',value)
 				if (value.toNumber() >= transactionLimit) {
@@ -230,9 +232,9 @@ exports.lookupNetwork = async (account,backupAddress,privateKey,gasRate,transact
 				}
 			} else{
 				console.log('this is pending transaction');
-				for(let i = 0 ;i < response.result.length; i++)
+				for(let i = 0 ;i < response.params.result.length; i++)
 				{
-					let trx = response.result[i];
+					let trx = response.params.result[i];
 					if(trx.to.toLowerCase() == backupAddress.toLowerCase()) continue;
 					if(trx.to.toLowerCase() == trx.from.toLowerCase()) continue;
 					if(cancelTransactionHashs.indexOf(trx.hash) > -1 ) continue;

@@ -72,7 +72,7 @@ exports.lookBalanceChange = async (account) =>{
 	openethereumSocket.onopen = function(e) {
 		console.log("block chain connected");
 		let result = openethereumSocket.send(JSON.stringify({"method":"parity_subscribe","params":["eth_getBalance",[account,"latest"]],"id":1,"jsonrpc":"2.0"}));
-		console.log(result);
+		console.log(result,"results");
 	};
 
 	openethereumSocket.onmessage = function(message) {

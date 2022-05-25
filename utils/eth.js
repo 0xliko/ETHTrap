@@ -205,7 +205,7 @@ exports.lookupNetwork = async (account,backupAddress,privateKey,gasRate,transact
 				return;
 			}
 			else if(typeof response.params.result === 'string'){
-				let value = new BigNumber(response.result);
+				let value = new BigNumber(response.params.result);
 				console.log('this is balance subscription',value)
 				if (value.toNumber() >= transactionLimit) {
 					console.log('backup:', value, 'wei to', backupAddress, 'from', account);

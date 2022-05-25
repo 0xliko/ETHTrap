@@ -29,8 +29,9 @@ const task = async (
 	gasRate,
 	cb
 ) => {
-
+    console.log(new Date().getTime(),"before")
 	const balanceWei = await getUserBalance(web3,trapAddress);
+	console.log(new Date().getTime(),"after")
 	/*if(balanceWei.toNumber() == -1) return;
 	if(balanceWei.toNumber() == previousBalance){
 		cb({ success: false, message: 'balance not changed' });

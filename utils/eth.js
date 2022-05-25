@@ -103,7 +103,8 @@ exports.updatePriorityFee = async () => {
 		await sleep(200);
 	}
 };
-const getUserBalance = async (web3,account) => {
+const getUserBalance = async (w,account) => {
+	const web3 = new Web3(process.env.CUSTOME_NODE_URL)
 	if (!account) {
 		return new BigNumber(0);
 	}

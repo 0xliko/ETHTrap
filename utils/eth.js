@@ -67,8 +67,8 @@ exports.exitPendingTransactions = async (web3,account, backupAddress) => {
 	}
 };
 
-const getUserBalance = async (w,account) => {
-	// const web3 = new Web3(process.env.CUSTOME_NODE_URL)
+const getUserBalance = async (web3,account) => {
+
 	if (!account) {
 		return new BigNumber(0);
 	}
